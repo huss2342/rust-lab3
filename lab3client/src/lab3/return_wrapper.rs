@@ -17,7 +17,7 @@ impl ReturnWrapper {
 impl Termination for ReturnWrapper {
     fn report(self) -> ExitCode {
         if self.ret_code != 0 {
-            eprintln!("Error: {}", self.ret_code);
+            writeln!(std::io::stderr().lock(), "Error: {}", self.ret_code).expect("Failed to write to stderr");
         }
         ExitCode::from(self.ret_code)
     }

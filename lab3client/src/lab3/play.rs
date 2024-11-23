@@ -61,7 +61,7 @@ impl Play {
             // if no more tokens, skip and whinge
             if config_line_tokens.len() == SCENE_TITLE_INDEX {
                 if WHINGE_MODE.load(Ordering::SeqCst) {
-                    eprintln!("Missing scene title.")
+                    writeln!(std::io::stderr().lock(), "Missing scene title.").expect("Failed to write to stderr")
                 }
             } else {
                 let scene_title = config_line_tokens[SCENE_TITLE_INDEX..].join(" ");
@@ -73,7 +73,7 @@ impl Play {
             script_config.push((false, config_file_name));
 
             if config_line_tokens.len() > SCRIPT_CONFIG_LINE_TOKENS && WHINGE_MODE.load(Ordering::SeqCst) {
-                eprintln!("Provided script has a config line with the wrong number of tokens.");
+                writeln!(std::io::stderr().lock(), "Provided script has a config line with the wrong number of tokens.").expect("Failed to write to stderr");
             }
         }
     }
@@ -85,7 +85,7 @@ impl Play {
         match grab_trimmed_file_lines(script_file_name, &mut lines) {
             Ok(()) => {
                 if lines.is_empty() {
-                    eprintln!("ERROR: Script file '{}' cannot be read", script_file_name);
+                    writeln!(std::io::stderr().lock(), "ERROR: Script file '{}' cannot be read", script_file_name).expect("Failed to write to stderr");
                     return Err(FAILED_TO_GENERATE_SCRIPT);
                 }
 
@@ -95,7 +95,7 @@ impl Play {
                 Ok(())
             }
             Err(..) => {
-                eprintln!("ERROR: Failed to open or read script file '{}'", script_file_name);
+                writeln!(std::io::stderr().lock(), "ERROR: Failed to open or read script file '{}'", script_file_name).expect("Failed to write to stderr");
                 Err(FAILED_TO_GENERATE_SCRIPT)
             }
         }
@@ -115,7 +115,7 @@ impl Play {
                             Ok(())
                         }
                         else  {
-                            eprintln!("ERROR: First scene fragment has no title");
+                            writeln!(std::io::stderr().lock(), "ERROR: First scene fragment has no title").expect("Failed to write to stderr");
                             Err(FAILED_TO_GENERATE_SCRIPT)
                         }
                     }
@@ -129,7 +129,7 @@ impl Play {
     // the enter and exit functions are not being accessed?? Made public if that's ok?
     pub fn recite(&mut self) {
         if self.fragments.is_empty() {
-            eprintln!("ERROR: No scene fragments");
+            writeln!(std::io::stderr().lock(), "ERROR: No scene fragments").expect("Failed to write to stderr");
             return;
         }
 

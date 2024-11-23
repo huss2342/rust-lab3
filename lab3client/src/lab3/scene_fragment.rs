@@ -137,7 +137,7 @@ impl SceneFragment {
 
         if config_line_tokens.len() != CONFIG_LINE_TOKENS {
             if WHINGE_MODE.load(Ordering::SeqCst) {
-                eprintln!("Provided config line has the wrong number of tokens.");
+                writeln!(std::io::stderr().lock(), "Provided config line has the wrong number of tokens.").expect("Failed to write to stderr");
             }
         }
 
@@ -213,9 +213,9 @@ impl SceneFragment {
                 } else {
                     if line_exists {
                         if lines_spoken == 0 {
-                            eprintln!("ERROR: Missing line {}", cur_line);
+                            writeln!(std::io::stderr().lock(), "ERROR: Missing line {}", cur_line).expect("Failed to write to stderr");
                         } else {
-                            eprintln!("ERROR: Duplicate line on line {}", cur_line);
+                            writeln!(std::io::stderr().lock(), "ERROR: Duplicate line on line {}", cur_line).expect("Failed to write to stderr");
                         }
                     }
                 }

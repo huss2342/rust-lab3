@@ -77,7 +77,7 @@ impl Player {
         let Some((first_token, rest_of_line)) = line.split_once(char::is_whitespace) else {
             // Badly formed line, no whitespace split
             if WHINGE_MODE.load(atomic::Ordering::SeqCst) {
-                eprintln!("ERROR: The line '{}' is badly formed and will be skipped.", line)
+                writeln!(std::io::stderr().lock(), "ERROR: The line '{}' is badly formed and will be skipped.", line).expect("Failed to write to stderr")
             }
             return;
         };
