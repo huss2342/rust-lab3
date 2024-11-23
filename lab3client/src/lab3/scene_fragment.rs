@@ -35,8 +35,8 @@ impl SceneFragment {
     pub fn enter(&self, next: &SceneFragment) {
         // check to see if title contains only whitespace. If not, prints out scene title
         if !self.title.trim().is_empty() {
-            println!(); // print a newline first to make the printout cleaner
-            println!("{}", self.title);
+            writeln!(std::io::stdout().lock(), ).expect("Failed to write to stdout"); // print a newline first to make the printout cleaner
+            writeln!(std::io::stdout().lock(), "{}", self.title).expect("Failed to write to stdout");
         }
 
         for next_player in &next.players {
@@ -49,7 +49,7 @@ impl SceneFragment {
             }
 
             if !contains {
-                println!("[Enter {}.]", next_player.name);
+                writeln!(std::io::stdout().lock(), "[Enter {}.]", next_player.name).expect("Failed to write to stdout");
             }
         }
 
@@ -66,12 +66,12 @@ impl SceneFragment {
     pub fn enter_all(&self) {
         // check to see if title contains only whitespace. If not, prints out scene title
         if !self.title.trim().is_empty() {
-            println!(); // print a newline first to make the printout cleaner
-            println!("{}", self.title);
+            writeln!(std::io::stdout().lock(), ).expect("Failed to write to stdout"); // print a newline first to make the printout cleaner
+            writeln!(std::io::stdout().lock(), "{}", self.title).expect("Failed to write to stdout");
         }
 
         for player in &self.players {
-            println!("[Enter {}.]", player.name);
+            writeln!(std::io::stdout().lock(), "[Enter {}.]", player.name).expect("Failed to write to stdout");
         }
     }
 
@@ -93,7 +93,7 @@ impl SceneFragment {
                 }
             }
             if !contains {
-                println!("[Exit {}.]", player.name);
+                writeln!(std::io::stdout().lock(), "[Exit {}.]", player.name).expect("Failed to write to stdout");
             }
         }
     }
@@ -107,7 +107,7 @@ impl SceneFragment {
     ///
     pub fn exit_all(&self) {
         for player in self.players.iter().rev() {
-            println!("[Exit {}.]", player.name);
+            writeln!(std::io::stdout().lock(), "[Exit {}.]", player.name).expect("Failed to write to stdout");
         }
     }
 

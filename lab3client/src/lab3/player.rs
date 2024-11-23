@@ -118,9 +118,9 @@ impl Player {
         }
         if self.name != *last_speaker {
             *last_speaker = self.name.clone();
-            println!("\n{}:", self.name);
+            writeln!(std::io::stdout().lock(), "\n{}:", self.name).expect("Failed to write to stdout");
         }
-        println!("{}", self.lines[self.index].1);
+        writeln!(std::io::stdout().lock(), "{}", self.lines[self.index].1).expect("Failed to write to stdout");
         self.index += 1;
     }
 
