@@ -1,4 +1,4 @@
-
+use std::io::Write;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::lab3::declarations::*;

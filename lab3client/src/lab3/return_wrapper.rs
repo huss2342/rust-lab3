@@ -1,4 +1,4 @@
-
+use std::io::Write;
 use std::process::{Termination, ExitCode};
 use crate::lab3::declarations::SUCCESS;
 

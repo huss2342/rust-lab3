@@ -1,4 +1,4 @@
-
+use std::io::Write;
 use std::sync::atomic;
 use std::cmp;
 use crate::lab3::declarations::{FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};

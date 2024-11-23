@@ -1,3 +1,4 @@
+use std::io::Write;
 use crate::lab3::declarations::{CharName, FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};
 use crate::lab3::player::Player;
 use crate::lab3::script_gen::{grab_trimmed_file_lines, CharacterTextFile,

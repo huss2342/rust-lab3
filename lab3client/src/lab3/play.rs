@@ -1,9 +1,8 @@
-
+use std::io::Write;
 use crate::lab3::declarations::*;
 use crate::lab3::script_gen::{grab_trimmed_file_lines};
 use std::sync::atomic::Ordering;
 use crate::lab3::scene_fragment::SceneFragment;
-
 
 type ScriptConfig = Vec<(bool, String)>;
 type Fragments = Vec<SceneFragment>;
