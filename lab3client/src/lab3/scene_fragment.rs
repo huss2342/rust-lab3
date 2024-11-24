@@ -1,16 +1,18 @@
+use std::io::Write;
 use crate::lab3::declarations::{CharName, FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};
 use crate::lab3::player::Player;
 use crate::lab3::script_gen::{grab_trimmed_file_lines, CharacterTextFile,
                               CHARACTER_FILE_CONFIG_LINE_INDEX, CHARACTER_NAME_CONFIG_LINE_INDEX,
                               CONFIG_LINE_TOKENS, CHARACTER_CONFIG_LINE};
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 
 type PlayConfig = Vec<(CharName, CharacterTextFile)>;
 
 pub struct SceneFragment {
     // made public if that's ok
     pub title: String,
-    players: Vec<Player>,
+    players: Vec<Arc<Mutex<Player>>>,
 }
 
 impl SceneFragment {
@@ -35,21 +37,25 @@ impl SceneFragment {
     pub fn enter(&self, next: &SceneFragment) {
         // check to see if title contains only whitespace. If not, prints out scene title
         if !self.title.trim().is_empty() {
-            println!(); // print a newline first to make the printout cleaner
-            println!("{}", self.title);
+            writeln!(std::io::stdout().lock(), ).expect("Failed to write to stdout"); // print a newline first to make the printout cleaner
+            writeln!(std::io::stdout().lock(), "{}", self.title).expect("Failed to write to stdout");
         }
 
         for next_player in &next.players {
             // determine if the previous scene contains the player from the next scene
             let mut contains = false;
             for player in &self.players {
-                if player.name == next_player.name {
-                    contains = true;
+                if let (Ok(player), Ok(next_player)) = (player.lock(), next_player.lock()) {
+                    if player.name == next_player.name {
+                        contains = true;
+                    }
                 }
             }
 
             if !contains {
-                println!("[Enter {}.]", next_player.name);
+                if let Ok(next_player) = next_player.lock() {
+                    writeln!(std::io::stdout().lock(), "[Enter {}.]", next_player.name).expect("Failed to write to stdout");
+                }
             }
         }
 
@@ -66,12 +72,14 @@ impl SceneFragment {
     pub fn enter_all(&self) {
         // check to see if title contains only whitespace. If not, prints out scene title
         if !self.title.trim().is_empty() {
-            println!(); // print a newline first to make the printout cleaner
-            println!("{}", self.title);
+            writeln!(std::io::stdout().lock(), ).expect("Failed to write to stdout"); // print a newline first to make the printout cleaner
+            writeln!(std::io::stdout().lock(), "{}", self.title).expect("Failed to write to stdout");
         }
 
         for player in &self.players {
-            println!("[Enter {}.]", player.name);
+            if let Ok(player) = player.lock() {
+                writeln!(std::io::stdout().lock(), "[Enter {}.]", player.name).expect("Failed to write to stdout");
+            }
         }
     }
 
@@ -88,12 +96,16 @@ impl SceneFragment {
             // determine if the next scene contains the player from the previous scene
             let mut contains = false;
             for next_player in &next.players {
-                if player.name == next_player.name {
-                    contains = true;
+                if let (Ok(next_player), Ok(player)) = (next_player.lock(), player.lock()) {
+                    if player.name == next_player.name {
+                        contains = true;
+                    }
                 }
             }
             if !contains {
-                println!("[Exit {}.]", player.name);
+                if let Ok(player) = player.lock() {
+                    writeln!(std::io::stdout().lock(), "[Exit {}.]", player.name).expect("Failed to write to stdout");
+                }
             }
         }
     }
@@ -107,7 +119,9 @@ impl SceneFragment {
     ///
     pub fn exit_all(&self) {
         for player in self.players.iter().rev() {
-            println!("[Exit {}.]", player.name);
+            if let Ok(player) = player.lock() {
+                writeln!(std::io::stdout().lock(), "[Exit {}.]", player.name).expect("Failed to write to stdout");
+            }
         }
     }
 
@@ -123,12 +137,24 @@ impl SceneFragment {
                                   char_name);
                         return Err(e);
                     }
-                    self.players.push(player);
+                    self.players.push(Arc::new(Mutex::new(player)));
                 }
             }
         }
-        self.players.sort();
+        self.players.sort_by(SceneFragment::compare_two_players);
         Ok(())
+    }
+
+    fn compare_two_players(player: &Arc<Mutex<Player>>, other: &Arc<Mutex<Player>>) ->  std::cmp::Ordering {
+        match (player.lock(), other.lock()) {
+            (Ok(player), Ok(other)) => {
+                match Player::partial_cmp(&player, &other) {
+                    Some(ordering) => ordering,
+                    None => std::cmp::Ordering::Equal
+                }
+            },
+            _ => std::cmp::Ordering::Equal,
+        }
     }
 
     /// add a config file to the scene
@@ -137,7 +163,7 @@ impl SceneFragment {
 
         if config_line_tokens.len() != CONFIG_LINE_TOKENS {
             if WHINGE_MODE.load(Ordering::SeqCst) {
-                eprintln!("Provided config line has the wrong number of tokens.");
+                writeln!(std::io::stderr().lock(), "Provided config line has the wrong number of tokens.").expect("Failed to write to stderr");
             }
         }
 
@@ -176,7 +202,7 @@ impl SceneFragment {
             Ok(..) => match self.process_config(play_config) {
                 Ok(..) => {
                     //  after all Player structs have been added, sort them by lines
-                    self.players.sort();
+                    self.players.sort_by(SceneFragment::compare_two_players);
                     Ok(())
                 },
                 Err(e) => Err(e)
@@ -197,13 +223,14 @@ impl SceneFragment {
             lines_spoken = 0;
 
             for player in &mut self.players {
+                if let Ok(mut player) = player.lock() {
+                    if let Some(line_num) = player.next_line() {
+                        line_exists = true;
 
-                if let Some(line_num) = player.next_line() {
-                    line_exists = true;
-
-                    if line_num == cur_line {
-                        player.speak(&mut last_speaker);
-                        lines_spoken += 1;
+                        if line_num == cur_line {
+                            player.speak(&mut last_speaker);
+                            lines_spoken += 1;
+                        }
                     }
                 }
             }
@@ -213,9 +240,9 @@ impl SceneFragment {
                 } else {
                     if line_exists {
                         if lines_spoken == 0 {
-                            eprintln!("ERROR: Missing line {}", cur_line);
+                            writeln!(std::io::stderr().lock(), "ERROR: Missing line {}", cur_line).expect("Failed to write to stderr");
                         } else {
-                            eprintln!("ERROR: Duplicate line on line {}", cur_line);
+                            writeln!(std::io::stderr().lock(), "ERROR: Duplicate line on line {}", cur_line).expect("Failed to write to stderr");
                         }
                     }
                 }
