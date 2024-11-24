@@ -159,12 +159,11 @@ impl Play {
 
         // handle last fragment
         while let Some(fragment) = iter.next() {
+
             if let Some(previous) = &previous_fragment {
-                if let Ok(previous_guard) = previous.lock() {
-                    if let Ok(fragment_guard) = fragment.lock() {
-                        previous_guard.exit(&fragment_guard);
-                        previous_guard.enter(&fragment_guard);
-                    }
+                if let (Ok(previous_guard), Ok(fragment_guard)) = (previous.lock(), fragment.lock()) {
+                    previous_guard.exit(&fragment_guard);
+                    previous_guard.enter(&fragment_guard);
                 }
             }
 
