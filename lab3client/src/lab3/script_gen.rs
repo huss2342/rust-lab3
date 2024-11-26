@@ -1,4 +1,4 @@
-
+use std::io::Write;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::lab3::declarations::*;
@@ -39,7 +39,7 @@ pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>)
     let file = match File::open(file_name) {
         Ok(file) => file,
         Err(e) => {
-            eprintln!("ERROR: Failed to open file '{}': {}", file_name, e);
+            writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
             return Err(FAILED_TO_GENERATE_SCRIPT);
         }
     };
@@ -54,7 +54,7 @@ pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>)
             Ok(0) => return Ok(()), // indicates success
             Ok(..) => file_lines.push(line.trim().to_string()),
             Err(e) => {
-                eprintln!("ERROR: Failed to read line '{}': {}", file_name, e);
+                writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
                 return Err(FAILED_TO_GENERATE_SCRIPT);
             }
         }

@@ -1,15 +1,16 @@
-
+use std::io::Write;
 use crate::lab3::declarations::*;
 use crate::lab3::script_gen::{grab_trimmed_file_lines};
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 use crate::lab3::scene_fragment::SceneFragment;
 
-
 type ScriptConfig = Vec<(bool, String)>;
-type Fragments = Vec<SceneFragment>;
+// type Fragments = Vec<SceneFragment>;
+type Fragments = Vec<Arc<Mutex<SceneFragment>>>;
 
 pub struct Play {
-    fragments: Fragments
+    fragments: Fragments,
 }
 
 impl Play {
@@ -39,7 +40,7 @@ impl Play {
                         return Err(FAILED_TO_GENERATE_SCRIPT);
                     }
 
-                    self.fragments.push(fragment);
+                    self.fragments.push(Arc::new(Mutex::new(fragment)));
                     title = String::new();
                 }
             }
@@ -61,19 +62,18 @@ impl Play {
             // if no more tokens, skip and whinge
             if config_line_tokens.len() == SCENE_TITLE_INDEX {
                 if WHINGE_MODE.load(Ordering::SeqCst) {
-                    eprintln!("Missing scene title.")
+                    writeln!(std::io::stderr().lock(), "Missing scene title.").expect("Failed to write to stderr")
                 }
             } else {
                 let scene_title = config_line_tokens[SCENE_TITLE_INDEX..].join(" ");
                 script_config.push((true, scene_title));
             }
-
         } else { // if the line is a config file
             let config_file_name = config_line_tokens[CONFIG_FILE_INDEX].to_string();
             script_config.push((false, config_file_name));
 
             if config_line_tokens.len() > SCRIPT_CONFIG_LINE_TOKENS && WHINGE_MODE.load(Ordering::SeqCst) {
-                eprintln!("Provided script has a config line with the wrong number of tokens.");
+                writeln!(std::io::stderr().lock(), "Provided script has a config line with the wrong number of tokens.").expect("Failed to write to stderr");
             }
         }
     }
@@ -85,7 +85,7 @@ impl Play {
         match grab_trimmed_file_lines(script_file_name, &mut lines) {
             Ok(()) => {
                 if lines.is_empty() {
-                    eprintln!("ERROR: Script file '{}' cannot be read", script_file_name);
+                    writeln!(std::io::stderr().lock(), "ERROR: Script file '{}' cannot be read", script_file_name).expect("Failed to write to stderr");
                     return Err(FAILED_TO_GENERATE_SCRIPT);
                 }
 
@@ -95,7 +95,7 @@ impl Play {
                 Ok(())
             }
             Err(..) => {
-                eprintln!("ERROR: Failed to open or read script file '{}'", script_file_name);
+                writeln!(std::io::stderr().lock(), "ERROR: Failed to open or read script file '{}'", script_file_name).expect("Failed to write to stderr");
                 Err(FAILED_TO_GENERATE_SCRIPT)
             }
         }
@@ -110,12 +110,23 @@ impl Play {
                 match self.process_config(script_config) {
                     Ok(()) => {
                         // check for fragments and title
-                        if !self.fragments.is_empty()
-                                && !self.fragments[FIRST_SCENE_FRAGMENT].title.trim().is_empty() {
-                            Ok(())
-                        }
-                        else  {
-                            eprintln!("ERROR: First scene fragment has no title");
+                        if !self.fragments.is_empty() {
+                            match self.fragments[FIRST_SCENE_FRAGMENT].lock() {
+                                Ok(fragment) => {
+                                    if !fragment.title.trim().is_empty() {
+                                        Ok(())
+                                    } else {
+                                        writeln!(std::io::stderr().lock(), "ERROR: First scene fragment has no title").expect("Failed to write to stderr");
+                                        Err(FAILED_TO_GENERATE_SCRIPT)
+                                    }
+                                }
+                                Err(..) => {
+                                    writeln!(std::io::stderr().lock(), "ERROR: Failed to lock first scene fragment").expect("Failed to write to stderr");
+                                    Err(FAILED_TO_GENERATE_SCRIPT)
+                                }
+                            }
+                        } else {
+                            writeln!(std::io::stderr().lock(), "ERROR: First scene fragment has no title").expect("Failed to write to stderr");
                             Err(FAILED_TO_GENERATE_SCRIPT)
                         }
                     }
@@ -129,33 +140,41 @@ impl Play {
     // the enter and exit functions are not being accessed?? Made public if that's ok?
     pub fn recite(&mut self) {
         if self.fragments.is_empty() {
-            eprintln!("ERROR: No scene fragments");
+            writeln!(std::io::stderr().lock(), "ERROR: No scene fragments").expect("Failed to write to stderr");
             return;
         }
 
         // instantiate an iterator
-        let mut iter = self.fragments.iter_mut().peekable();
+        let mut iter = self.fragments.iter().peekable();
         let mut previous_fragment = None;
 
         // handle first fragment separately to avoid mutable borrows
         if let Some(fragment) = iter.next() {
-            fragment.enter_all();
-            fragment.recite();
-            previous_fragment = Some(fragment);
+            if let Ok(mut fragment_guard) = fragment.lock() {
+                fragment_guard.enter_all();
+                fragment_guard.recite();
+                previous_fragment = Some(fragment);
+            }
         }
 
         // handle last fragment
         while let Some(fragment) = iter.next() {
 
-            if let Some(previous) = previous_fragment {
-                previous.exit(fragment);
-                previous.enter(fragment);
+            if let Some(previous) = &previous_fragment {
+                if let (Ok(previous_guard), Ok(fragment_guard)) = (previous.lock(), fragment.lock()) {
+                    previous_guard.exit(&fragment_guard);
+                    previous_guard.enter(&fragment_guard);
+                }
             }
-            fragment.recite();
 
-            if iter.peek().is_none() {
-                fragment.exit_all();
+            if let Ok(mut fragment_guard) = fragment.lock() {
+                fragment_guard.recite();
+
+                if iter.peek().is_none() {
+                    fragment_guard.exit_all();
+                }
             }
+
             previous_fragment = Some(fragment);
         }
     }

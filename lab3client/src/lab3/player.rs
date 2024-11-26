@@ -1,4 +1,4 @@
-
+use std::io::Write;
 use std::sync::atomic;
 use std::cmp;
 use crate::lab3::declarations::{FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};
@@ -77,7 +77,7 @@ impl Player {
         let Some((first_token, rest_of_line)) = line.split_once(char::is_whitespace) else {
             // Badly formed line, no whitespace split
             if WHINGE_MODE.load(atomic::Ordering::SeqCst) {
-                eprintln!("ERROR: The line '{}' is badly formed and will be skipped.", line)
+                writeln!(std::io::stderr().lock(), "ERROR: The line '{}' is badly formed and will be skipped.", line).expect("Failed to write to stderr")
             }
             return;
         };
@@ -118,9 +118,9 @@ impl Player {
         }
         if self.name != *last_speaker {
             *last_speaker = self.name.clone();
-            println!("\n{}:", self.name);
+            writeln!(std::io::stdout().lock(), "\n{}:", self.name).expect("Failed to write to stdout");
         }
-        println!("{}", self.lines[self.index].1);
+        writeln!(std::io::stdout().lock(), "{}", self.lines[self.index].1).expect("Failed to write to stdout");
         self.index += 1;
     }
 
