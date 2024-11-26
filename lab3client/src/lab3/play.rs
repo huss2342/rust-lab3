@@ -162,8 +162,8 @@ impl Play {
 
             if let Some(previous) = &previous_fragment {
                 if let (Ok(previous_guard), Ok(fragment_guard)) = (previous.lock(), fragment.lock()) {
-                    previous_guard.exit(&fragment_guard);
-                    previous_guard.enter(&fragment_guard);
+                    fragment_guard.exit(&previous_guard);
+                    fragment_guard.enter(&previous_guard);
                 }
             }
 

@@ -34,27 +34,27 @@ impl SceneFragment {
     /// - `self`: A reference to self
     /// - `next`: A reference to another instance of the struct SceneFragment
     ///
-    pub fn enter(&self, next: &SceneFragment) {
+    pub fn enter(&self, previous: &SceneFragment) {
         // check to see if title contains only whitespace. If not, prints out scene title
         if !self.title.trim().is_empty() {
             writeln!(std::io::stdout().lock(), ).expect("Failed to write to stdout"); // print a newline first to make the printout cleaner
             writeln!(std::io::stdout().lock(), "{}", self.title).expect("Failed to write to stdout");
         }
 
-        for next_player in &next.players {
+        for player in &self.players {
             // determine if the previous scene contains the player from the next scene
             let mut contains = false;
-            for player in &self.players {
-                if let (Ok(player), Ok(next_player)) = (player.lock(), next_player.lock()) {
-                    if player.name == next_player.name {
+            for prev_player in &previous.players {
+                if let (Ok(player), Ok(prev_player)) = (player.lock(), prev_player.lock()) {
+                    if player.name == prev_player.name {
                         contains = true;
                     }
                 }
             }
 
             if !contains {
-                if let Ok(next_player) = next_player.lock() {
-                    writeln!(std::io::stdout().lock(), "[Enter {}.]", next_player.name).expect("Failed to write to stdout");
+                if let Ok(player) = player.lock() {
+                    writeln!(std::io::stdout().lock(), "[Enter {}.]", player.name).expect("Failed to write to stdout");
                 }
             }
         }
@@ -91,11 +91,11 @@ impl SceneFragment {
     /// - `self`: A reference to self
     /// - `next`: A reference to another instance of the struct SceneFragment
     ///
-    pub fn exit(&self, next: &SceneFragment) {
-        for player in self.players.iter().rev() {
+    pub fn exit(&self, previous: &SceneFragment) {
+        for player in previous.players.iter().rev() {
             // determine if the next scene contains the player from the previous scene
             let mut contains = false;
-            for next_player in &next.players {
+            for next_player in &self.players {
                 if let (Ok(next_player), Ok(player)) = (next_player.lock(), player.lock()) {
                     if player.name == next_player.name {
                         contains = true;
@@ -227,7 +227,7 @@ impl SceneFragment {
                     if let Some(line_num) = player.next_line() {
                         line_exists = true;
 
-                        if line_num == cur_line {
+                        if cur_line >= line_num {
                             player.speak(&mut last_speaker);
                             lines_spoken += 1;
                         }
