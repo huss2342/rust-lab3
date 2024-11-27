@@ -35,8 +35,9 @@ impl Play {
                     let mut fragment = SceneFragment::new(&title);
 
                     if let Err(..) = fragment.prepare(&fragment_file_name) {
-                        eprintln!("ERROR: Failed to generate script from file: {}.",
-                                  fragment_file_name);
+                        // eprintln!("ERROR: Failed to generate script from file: {}.",
+                        //           fragment_file_name);
+                        writeln!(std::io::stderr().lock(), "ERROR: Failed to generate script from file: '{}'", fragment_file_name).expect("Failed to write to stderr");
                         return Err(FAILED_TO_GENERATE_SCRIPT);
                     }
 
