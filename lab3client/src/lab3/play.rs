@@ -4,6 +4,7 @@ use crate::lab3::script_gen::{grab_trimmed_file_lines};
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use crate::lab3::scene_fragment::SceneFragment;
+use std::thread;
 
 type ScriptConfig = Vec<(bool, String)>;
 // type Fragments = Vec<SceneFragment>;
@@ -21,36 +22,58 @@ impl Play {
     }
 
     /// modified function for ScriptConfig bool parameters and SceneFragment types
-    fn process_config(&mut self, script_config: ScriptConfig) -> Result<(), u8> {
+    fn process_config(&mut self, script_config: &ScriptConfig) -> Result<(), u8> {
         let mut title = String::new();
+        let mut handles = Vec::new();
 
-        for config in script_config {
+        for config in script_config.iter() {
+
             match config {
-                // if true, print title of new scene
+                // if true, update scene title
                 (true, new_title) => {
-                    title = new_title;
+                    title = new_title.clone();
                 }
-                // if false, use config_file name to push new SceneFragment into Play's vector
+                // if false, create a scene fragment and prepare in a thread
                 (false, fragment_file_name) => {
-                    let mut fragment = SceneFragment::new(&title);
+                    // create a clone title for thread
+                    let title_clone = title.clone();
+                    let fragment_file_name_clone = fragment_file_name.clone();
+                    // spawn a thread to prepare SceneFragment
+                    let handle = thread::spawn(move || {
+                        let mut fragment = SceneFragment::new(&title_clone);
 
-                    if let Err(..) = fragment.prepare(&fragment_file_name) {
-                        // eprintln!("ERROR: Failed to generate script from file: {}.",
-                        //           fragment_file_name);
-                        writeln!(std::io::stderr().lock(), "ERROR: Failed to generate script from file: '{}'", fragment_file_name).expect("Failed to write to stderr");
-                        return Err(FAILED_TO_GENERATE_SCRIPT);
-                    }
-
-                    self.fragments.push(Arc::new(Mutex::new(fragment)));
+                        if let Err(e) = fragment.prepare(&fragment_file_name_clone) {
+                            return Err(e);
+                        } else {
+                            Ok(fragment)
+                        }
+                    });
+                    handles.push(handle);
                     title = String::new();
                 }
             }
         }
+        // join threads
+        for handle in handles {
+            match handle.join() {
+                Ok(fragment) => {
+                    // if Ok push prepared fragment
+                    self.fragments.push(Arc::new(Mutex::new(fragment.unwrap())));
+                }
+                Err(_) => {
+                    writeln!(std::io::stderr().lock(), "ERROR: Failed to generate script from file")
+                        .expect("Failed to write to stderr");
+                    return Err(FAILED_TO_GENERATE_SCRIPT);
+                }
+            }
+        }
         Ok(())
-    }
+        }
 
 
-    // modified function for ScriptConfig to read in tokens and distinguish between scenes or another config file
+
+
+// modified function for ScriptConfig to read in tokens and distinguish between scenes or another config file
     fn add_config(&self, config_line: &String, script_config: &mut ScriptConfig) {
         let config_line_tokens: Vec<&str> = config_line.split_whitespace().collect();
         // ignore blank lines
@@ -103,12 +126,12 @@ impl Play {
     }
 
     // modified function for ScriptConfig to call read_config and check for fragment title
-    pub fn prepare(&mut self, config_file_name: &String) -> Result<(), u8> {
+    pub fn prepare(&mut self, script_file_name: &str) -> Result<(), u8> {
         let mut script_config: ScriptConfig = vec![];
 
-        match self.read_config(config_file_name, &mut script_config) {
+        match self.read_config(&script_file_name.to_string(), &mut script_config) {
             Ok(()) => {
-                match self.process_config(script_config) {
+                match self.process_config(&script_config) {
                     Ok(()) => {
                         // check for fragments and title
                         if !self.fragments.is_empty() {
@@ -138,7 +161,7 @@ impl Play {
         }
     }
 
-    // the enter and exit functions are not being accessed?? Made public if that's ok?
+
     pub fn recite(&mut self) {
         if self.fragments.is_empty() {
             writeln!(std::io::stderr().lock(), "ERROR: No scene fragments").expect("Failed to write to stderr");

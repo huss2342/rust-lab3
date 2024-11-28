@@ -6,6 +6,7 @@ use crate::lab3::script_gen::{grab_trimmed_file_lines, CharacterTextFile,
                               CONFIG_LINE_TOKENS, CHARACTER_CONFIG_LINE};
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 type PlayConfig = Vec<(CharName, CharacterTextFile)>;
 
@@ -128,19 +129,54 @@ impl SceneFragment {
 
     /// create the players vector
     fn process_config(&mut self, play_config: PlayConfig) -> Result<(), u8> {
+        let mut handles = Vec::new();
+
         for config in play_config {
             match config {
                 (char_name, part_file_name) => {
-                    let mut player = Player::new(&char_name);
-                    if let Err(e) = player.prepare(&part_file_name) {
-                        eprintln!("ERROR: Failed to generate script for character {}.",
-                                  char_name);
-                        return Err(e);
-                    }
-                    self.players.push(Arc::new(Mutex::new(player)));
+                    // clone values to be moved into thread
+                    let char_name_clone = char_name.clone();
+                    let part_file_name_clone = part_file_name.clone();
+
+                    // spawn thread for preparing player
+                    let handle = thread::spawn(move || {
+                        let mut player = Player::new(&char_name_clone);
+
+                        if let Err(e) = player.prepare(&part_file_name_clone) {
+                            panic!("Failed to generate script for character {}:, {:?}", char_name_clone, e);
+                        }
+                        player
+                    });
+                    // add thread to collection
+                    handles.push(handle);
                 }
             }
         }
+        // join threads
+        for handle in handles {
+
+            match handle.join() {
+                Ok(player) => {
+                    // if successful completion of thread, push player
+                    self.players.push(Arc::new(Mutex::new(player)));
+                }
+                Err(_) => {
+                    writeln!(std::io::stderr().lock(), "ERROR: Failed to generate script for player")
+                        .expect("Failed to write to stderr");
+                    return Err(FAILED_TO_GENERATE_SCRIPT);
+                }
+            }
+            // match handle.join() {
+                // Ok(player) => {
+                //     // if successful completion of thread, push player
+                //     self.players.push(Arc::new(Mutex::new(player)));
+                // }
+                // Err(_) => {
+                //     panic!("Thread panicked while generating script for a player.");
+                // }
+            // }
+        }
+        // sort player by first line number after all threads have joined
         self.players.sort_by(SceneFragment::compare_two_players);
         Ok(())
     }
@@ -205,9 +241,9 @@ impl SceneFragment {
                     self.players.sort_by(SceneFragment::compare_two_players);
                     Ok(())
                 },
-                Err(e) => Err(e)
-            },
-            Err(e) => Err(e)
+                Err(_) =>  panic!("Failed to process configuration file: {}", config_file_name),
+            }
+            Err(_) => panic!("Failed to read configuration file: {}", config_file_name),
         }
     }
 

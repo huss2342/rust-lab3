@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::sync::atomic;
 use std::cmp;
-use crate::lab3::declarations::{FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};
+use crate::lab3::declarations::{WHINGE_MODE};
 use crate::lab3::script_gen::grab_trimmed_file_lines;
 
 type PlayLines = Vec<(usize, String)>; // line number, line text
@@ -90,8 +90,8 @@ impl Player {
             Ok(line_num) =>
                 self.lines.push((line_num, rest_of_line.to_string())),
             Err(..) => if WHINGE_MODE.load(atomic::Ordering::SeqCst) {
-                eprintln!("ERROR: The token \"{}\" does not represent a valid usize value.",
-                          first_token);
+                writeln!(std::io::stderr().lock(), "ERROR: The token \"{}\" does not represent a valid usize value",
+                         first_token).expect("Failed to write to stderr")
             }
         }
     }
@@ -101,7 +101,7 @@ impl Player {
         let mut file_lines_ref: Vec<String> = Vec::new();
 
         if let Err(..) = grab_trimmed_file_lines(part_file_name, &mut file_lines_ref) {
-            return Err(FAILED_TO_GENERATE_SCRIPT);
+            panic!("Failed to read the part file: {}", part_file_name);
         }
 
         for line in &file_lines_ref {
