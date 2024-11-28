@@ -1,4 +1,4 @@
-
+use std::io::Write;
 pub mod lab3;
 use std::env;
 use std::sync::atomic::Ordering;
