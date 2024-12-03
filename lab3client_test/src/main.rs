@@ -1,6 +1,6 @@
 use std::env;
 use std::io::{stdout, Read, Write};
-use std::net::TcpStream;
+use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
 static SCRIPT_NAME_POS: usize = 0;
@@ -25,33 +25,22 @@ fn main() -> Result<(), u8> {
 
     match TcpStream::connect(addr) {
         Ok(mut stream) => {
-            println!("connected.");
             let token_buf = token.as_bytes();
             stream.write_all(token_buf).expect("Failed to Write to Stream.");
+            stream.shutdown(Shutdown::Write).expect("could not shutdown");
             if token != "quit" {
-                println!("token is not quit");
                 loop {
-                    println!("inside loop.");
-                    let mut text: &mut [u8] = &mut [0; 240]; //TODO: un-hard-code
-                    println!("inside loop 2.");
-                    let mut text_vec: Vec<u8> = Vec::new();
-                    let read_bytes = stream.read_to_end(&mut text_vec).unwrap();
-                    // let read_bytes = stream.read(&mut text).expect("Reading to String Failed.");
-
-                    println!("inside loop 3.");
-                    print!("{}", read_bytes);
-                    if read_bytes == 0 {
+                    let mut text: String = String::new();
+                    let read_ret = stream.read_to_string(&mut text).expect("Reading to String Failed.");
+                    if read_ret == 0 {
                         break;
                     }
-                    writeln!(stdout(), "WRITING").expect("Failed to write to stdout.");
-                    println!("WRITING WITH PRINTLN");
-                    println!("{:?}", &text);
+                    writeln!(stdout(), "WRITING: ").expect("Failed to write to stdout."); // TODO Idk if we want this or not, examine later
+                    println!("{}", &text);
                 }
-                println!("Outside while loop");
                 Ok(())
             } else {
                 let time: Duration = Duration::new(1, 0);
-                println!("going to sleep");
                 std::thread::sleep(time);
                 TcpStream::connect(addr).expect("Failed to Connect for Shutdown.");
                 Ok(())

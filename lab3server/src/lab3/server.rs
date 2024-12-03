@@ -75,7 +75,6 @@ impl Server {
                             Err(e) => {
                                 stream.shutdown(Shutdown::Both).expect("Failed to shutdown connection.");
                                 writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", &file_name, e).expect("Failed to write to stderr");
-                                panic!("file failed.");
                                 return Err(TEMP_ERR_RETURN);
                             }
                         };
@@ -84,6 +83,7 @@ impl Server {
                         while file.read(&mut file_text).unwrap() != 0 {
                             stream.write_all(&mut file_text).expect("Failed to Write to Stream.");
                         }
+                        stream.shutdown(Shutdown::Write).expect("could not shutdown");
                         return Ok(());
                     }); // .join().expect("Failed on joining child thread.").expect("Failed on joining child thread 2."); FIXME remove
                 },
