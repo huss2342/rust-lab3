@@ -1,5 +1,5 @@
-use std::io::Write;
 pub mod lab3;
+use std::io::Write;
 use std::env;
 use std::sync::atomic::Ordering;
 use lab3::declarations::*;
