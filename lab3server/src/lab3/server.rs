@@ -60,7 +60,7 @@ impl Server {
                         stream.read_to_string(&mut file_name).expect("Failed to Read String.");
 
                         // if file contains illegal file_name characters, return an appropriate error
-                        if file_name.contains(|c: char| {c == '/' || c == '\\' || c == '$'}) {
+                        if file_name.contains(|c: char| { c == '/' || c == '\\' || c == '$' }) {
                             writeln!(std::io::stderr().lock(), "ERROR: Cannot open file in another directory.").expect("Failed to write to stderr");
                             return Err(TEMP_ERR_RETURN);
                         }
@@ -85,7 +85,7 @@ impl Server {
                             stream.write_all(&mut file_text).expect("Failed to Write to Stream.");
                         }
                         return Ok(());
-                    });
+                    }); // .join().expect("Failed on joining child thread.").expect("Failed on joining child thread 2."); FIXME remove
                 },
                 Err(..) =>  {
                     return Err(TEMP_ERR_RETURN); // failed to open connection

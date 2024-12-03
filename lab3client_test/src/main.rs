@@ -25,16 +25,29 @@ fn main() -> Result<(), u8> {
 
     match TcpStream::connect(addr) {
         Ok(mut stream) => {
+            println!("connected.");
             let token_buf = token.as_bytes();
             stream.write_all(token_buf).expect("Failed to Write to Stream.");
             if token != "quit" {
-                let mut text = String::new();
-                while stream.read_to_string(&mut text).unwrap() != 0 {
+                println!("token is not quit");
+                loop {
+                    println!("inside loop.");
+                    let mut text: &mut [u8] = &mut [0; 240]; //TODO: un-hard-code
+                    println!("inside loop 2.");
+                    let mut text_vec: Vec<u8> = Vec::new();
+                    let read_bytes = stream.read_to_end(&mut text_vec).unwrap();
+                    // let read_bytes = stream.read(&mut text).expect("Reading to String Failed.");
+
+                    println!("inside loop 3.");
+                    print!("{}", read_bytes);
+                    if read_bytes == 0 {
+                        break;
+                    }
                     writeln!(stdout(), "WRITING").expect("Failed to write to stdout.");
                     println!("WRITING WITH PRINTLN");
-                    writeln!(stdout(), "{}", &text).expect("Failed to write to stdout.");
-                    text = String::new();
+                    println!("{:?}", &text);
                 }
+                println!("Outside while loop");
                 Ok(())
             } else {
                 let time: Duration = Duration::new(1, 0);
