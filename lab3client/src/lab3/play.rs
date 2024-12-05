@@ -118,8 +118,8 @@ impl Play {
                 }
                 Ok(())
             }
-            Err(..) => {
-                writeln!(std::io::stderr().lock(), "ERROR: Failed to open or read script file '{}'", script_file_name).expect("Failed to write to stderr");
+            Err(e) => {
+                writeln!(std::io::stderr().lock(), "ERROR: Failed to open or read script file '{}', error: {}", script_file_name, e).expect("Failed to write to stderr");
                 Err(FAILED_TO_GENERATE_SCRIPT)
             }
         }

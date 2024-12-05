@@ -28,6 +28,8 @@ pub static FIRST_SCENE_FRAGMENT: usize = 0;
 pub static SUCCESS: u8 = 0;
 pub static BAD_CMD_LINE: u8 = 1;
 pub static FAILED_TO_GENERATE_SCRIPT: u8 = 2;
+pub static TCP_CONNECTION_FAILED: u8 = 3;
+pub static FILE_OPEN_FAILED: u8 = 4;
 
 // AtomicBool to keep track of if we are whinging
 pub static WHINGE_MODE: AtomicBool = AtomicBool::new(false);
