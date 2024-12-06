@@ -6,39 +6,59 @@
 - Becky Shofner r.a.shofner@wustl.edu
 
 ## Overview
-    This lab builds on the last two by adding thread safety, multi-threading, and
-    networking capabilities. We refractored our code from the previous lab and
-    updated it to use the Arc<Mutex> for safe shared data access, replacing the println!
-    statements with thread-safe writeln!, and modifying methods to handle locked
-    references. Multi-threading was implemented to process configuration and file
-    operations in parallel, with thread managed through join to propogate errors.
-    A multi-threaded server was developed to handle file requests over a network, 
-    processing tokens to serve files or shut down based on client input. Local and 
-    remotevfile I/O are unified through a utility function. 
-    Each team member then focused on a specific section: Thread-safe output and data sharing, 
-    Multi-threaded file operations, Multi-threaded server, and From local to networked file 
-    IO ensuring the code compiled and ran before handing the project off to the next 
-    partner. Finally, we collaborated on debugging and testing to ensure smooth functionality.
+This lab builds on the last two by adding thread safety, multi-threading, and
+networking capabilities. We refractored our code from the previous lab and
+updated it to use the Arc<Mutex> for safe shared data access, replacing the println!
+statements with thread-safe writeln!, and modifying methods to handle locked
+references. Multi-threading was implemented to process configuration and file
+operations in parallel, with thread managed through join to propogate errors.
+A multi-threaded server was developed to handle file requests over a network, 
+processing tokens to serve files or shut down based on client input. Local and 
+remotevfile I/O are unified through a utility function. 
+Each team member then focused on a specific section: Thread-safe output and data sharing, 
+Multi-threaded file operations, Multi-threaded server, and From local to networked file 
+IO ensuring the code compiled and ran before handing the project off to the next 
+partner. Finally, we collaborated on debugging and testing to ensure smooth functionality.
 
 ### Thread-Safe Output and Data Sharing
+I replaced all `println!` and `eprint!` macros with a `writeln!` macro using
+`std::io::stdout()` and `std::io::stderr()` as the output streams 
+accordingly. I also added error handling for write operations using 
+`expect()`. I then handled thread safety as shown below:
+
+- I modified the `Play` struct by changing the `fragments` vector to 
+  store `Arc<Mutex<SceneFragment>>` instead of `SceneFragment`. 
+
+- I modified the `SceneFragment` struct:
+  - I changed the `players` vector to store `Arc<Mutex<Player>>` instead of 
+    just `Player`
+  - Added thread-safe player comparison function:
+    ```rust
+    fn compare_two_players(player: &Arc<Mutex<Player>>, other: &Arc<Mutex<Player>>) 
+        -> std::cmp::Ordering { ... }
+    ```
+
+- For both of them I had to:
+  - I updated `process_config` to wrap new fragments in `Arc` and `Mutex`
+  - I modified `prepare` and `recite` methods to use `lock()` for safe access
 
 ### Multi-Threaded File Operations
-    I modified the Play and SceneFragment structs so that instead of directly 
-    calling the prepare methods of SceneFragment or Player, each preparation
-    is done inside a separate thread that was spawned, and each thread's handle
-    is stored. When joining all the threads, handle panics by propagating upward,
-    ensuring the current thread also panics. I also changed the prepare funcitons
-    to use panic! for errors, so they result in thread failures. After I modified
-    the code, I ran it to ensure correct behavior and that file errors are handled
-    correctly as before.
+I modified the Play and SceneFragment structs so that instead of directly 
+calling the prepare methods of SceneFragment or Player, each preparation
+is done inside a separate thread that was spawned, and each thread's handle
+is stored. When joining all the threads, handle panics by propagating upward,
+ensuring the current thread also panics. I also changed the prepare funcitons
+to use panic! for errors, so they result in thread failures. After I modified
+the code, I ran it to ensure correct behavior and that file errors are handled
+correctly as before.
 
-    Issues I ran into when creating threads were variable ownership
-    being moved and various functions expecting different types. 
-    For example, one piece of code expected a String, but the variable was of
-    type &String. I fixed this by converting the variable to a 
-    String before assigning it by creating a clone(). Another string
-    type issue was fixed by adding to_string() to the variable to 
-    change the type from a &str to a String.
+Issues I ran into when creating threads were variable ownership
+being moved and various functions expecting different types. 
+For example, one piece of code expected a String, but the variable was of
+type &String. I fixed this by converting the variable to a 
+String before assigning it by creating a clone(). Another string
+type issue was fixed by adding to_string() to the variable to 
+change the type from a &str to a String.
 
 ### Multi-Threaded Server
 
