@@ -56,5 +56,7 @@ fn parse_args(script_file_name: &mut String) -> Result<(), u8> {
 
 // prints helpful usage message
 fn usage(script_name: &String) {
-    writeln!(std::io::stderr().lock(), "usage: {} <script_file_name> [whinge]",script_name).expect("Failed to write to stderr");
+    writeln!(std::io::stderr().lock(), "usage: {} <script_file> [whinge]\n\
+    (script_file can be local or net:host:port:filename)", script_name)
+        .expect("Failed to write to stderr");
 }

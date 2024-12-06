@@ -25,7 +25,7 @@ fn main() -> ReturnWrapper {
     }
 }
 
-// prints helpful usage message
+// prints helpful usage message (server)
 fn usage(script_name: &String) {
     writeln!(std::io::stderr().lock(), "usage: {} <network_address>", script_name).expect("Failed to write to stderr");
 }

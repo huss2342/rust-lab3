@@ -47,22 +47,50 @@
 
 ## Testing
 
+## Usage
 
+### Setup
+1. Unzip the project folder.
+2. Write a script file with its config text files in the root of the project directory, or use the one provided.
+3. Run either the server, test client, or main client as described below.
 
-// TODO: fix usage
-## Usage 
-    1. Unzip the project folder.
-    2. Write a script file with its config text files in the root of the project directory, or use the one provided.
-    3. Run the main script using the following command:
-    ```
-   cargo run <script_file_name> [whinge]
-    ```
-   Where:
-    - `<script_file_name>` is the name of your script file (required)
-    - `[whinge]` is an optional parameter to enable additional error output
+### 1- Server
+```bash
+cargo run <network_address>
+# Example
+cargo run 127.0.0.1:80
+```
 
-  Example:
-    ```
-    cargo run partial_hamlet_act_ii_script.txt whinge
+### 2- Test Client
+```bash
+cargo run <network_address> <token>
+# Example
+cargo run 127.0.0.1:80 filename.txt
+```
 
-    ```
+### 3- Main Client
+```bash
+cargo run <script_file> [whinge]
+
+# Example: local file
+cargo run filename.txt whinge
+
+# Example: network file
+cargo run net:127.0.0.1:80:filename.txt
+```
+
+**Parameters:**
+- `<script_file>` can be:
+    - A local file (`partial_hamlet_act_ii_script.txt`)
+    - A network file (`net:127.0.0.1:80:partial_hamlet_act_ii_script.txt`)
+- `[whinge]` is an optional parameter to enable additional error output
+
+### Important Notes
+- Server must be running before connecting with any client
+- Port number must be:
+    - Available (not in use)
+    - Between 0 and 65535
+- Both client and server must:
+    - Use the same network address and port
+    - Have network connectivity
+- All files must exist and be accessible

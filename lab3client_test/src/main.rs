@@ -58,7 +58,7 @@ fn main() -> Result<(), u8> {
 }
 
 
-// prints helpful usage message
+// prints helpful usage message (client_test)
 fn usage(script_name: &String) {
     writeln!(std::io::stderr().lock(), "usage: {} <network_address> <token>", script_name).expect("Failed to write to stderr");
 }
