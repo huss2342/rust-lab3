@@ -63,7 +63,15 @@ change the type from a &str to a String.
 ### Multi-Threaded Server
 
 ### From Local to Networked File IO
-
+I modified the file I/O to support both local and networked files access. 
+This is done by adding the `get_buffered_reader` function which handles both 
+network paths and local paths. It does this through using regex to pattern 
+match network files. For network files it establishes the TCP connection and 
+sends the filename to the server then creates a buffered reader to read from 
+the TCP stream. For local files it just simply opens the local file and 
+creates the buffered reader. I also modified the `grab_trimed_file_lines` 
+function to add support for network files while preserving the same line 
+reading behaviour.
 
 ## Testing
 
