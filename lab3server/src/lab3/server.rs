@@ -94,7 +94,7 @@ impl Server {
                         }
                         stream.shutdown(Shutdown::Write).expect("could not shutdown");
                         return Ok(());
-                    }); // .join().expect("Failed on joining child thread.").expect("Failed on joining child thread 2."); FIXME remove
+                    });
                 },
                 Err(..) =>  {
                     return Err(TEMP_ERR_RETURN); // failed to open connection

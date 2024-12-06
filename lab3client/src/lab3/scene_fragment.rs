@@ -2,7 +2,7 @@
 This client file defines the SceneFragment struct, which represents a single scene in the play and manages
 its players and script. It includes methods for preparing the scene from a configuration file, managing
 player entrances and exits, and reciting the scene's lines while handling errors and duplicate lines.
- */
+*/
 
 use std::io::Write;
 use crate::lab3::declarations::{CharName, FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};

@@ -1,4 +1,5 @@
-/* This client file contains shared types, constants, and global variables used throughout
+/*
+This client file contains shared types, constants, and global variables used throughout
 the lab3client files. It centralizes common definitions to ensure consistency and maintainability.
 */
 

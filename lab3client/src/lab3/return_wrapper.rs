@@ -1,7 +1,8 @@
-/* This client file defines the ReturnWrapper struct, which standardizes the handling of return codes
+/*
+This client file defines the ReturnWrapper struct, which standardizes the handling of return codes
 for the program. It implements the Termination trait to convert return codes into ExitCode values,
 providing a consistent mechanism for error reporting and program termination.
- */
+*/
 
 use std::io::Write;
 use std::process::{Termination, ExitCode};

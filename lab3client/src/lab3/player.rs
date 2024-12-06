@@ -2,7 +2,7 @@
 This client file defines the Player struct, which represents a character in the play, along with their
 lines and state. It includes methods for preparing a player's script, determining their next line,
 and printing their lines during recitation.
- */
+*/
 
 use std::io::Write;
 use std::sync::atomic;

@@ -1,4 +1,5 @@
-/* This client file defines the Play struct, which manages the organization and execution of scene
+/*
+This client file defines the Play struct, which manages the organization and execution of scene
 fragments within a play. It includes methods for preparing scripts, processing configurations,
 and reciting scenes, leveraging multithreading and shared state to handle complex interactions
 between fragments.
@@ -13,7 +14,6 @@ use crate::lab3::scene_fragment::SceneFragment;
 use std::thread;
 
 type ScriptConfig = Vec<(bool, String)>;
-// type Fragments = Vec<SceneFragment>;
 type Fragments = Vec<Arc<Mutex<SceneFragment>>>;
 
 pub struct Play {
