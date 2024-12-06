@@ -1,9 +1,7 @@
-use std::any::{type_name, Any};
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::net::{Shutdown, TcpStream};
-use std::ptr::write;
 use regex::Regex;
 use crate::lab3::declarations::*;
 
