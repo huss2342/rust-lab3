@@ -32,6 +32,7 @@ impl Server {
             Ok(listener) => {
                 self.listener = Some(listener);
                 self.listening_addr = addr.to_string();
+                println!("Server listening on: {}", addr);
                 Ok(())
             },
             Err(..) => {
@@ -39,7 +40,6 @@ impl Server {
             }
         }
     }
-
 
     ///
     pub fn run(&mut self) -> Result<(), u8> {
@@ -52,7 +52,6 @@ impl Server {
             if CANCEL_FLAG.load(SeqCst) {
                 return Err(TEMP_ERR_RETURN);
             }
-
             match connection {
                 Ok((mut stream, _addr)) => {
                     spawn(move || {
@@ -78,10 +77,14 @@ impl Server {
                                 return Err(TEMP_ERR_RETURN);
                             }
                         };
-
-                        let mut file_text: &mut [u8] = &mut [0; 240]; // TODO change 240 to a static non-temp value
-                        while file.read(&mut file_text).unwrap() != 0 {
-                            stream.write_all(&mut file_text).expect("Failed to Write to Stream.");
+                        println!("sending file: {}", &file_name);
+                        let mut buffer = [0; 240];  // TODO change 240 to a static non-temp value
+                        loop {
+                            match file.read(&mut buffer) {
+                                Ok(0) => break,  // EOF reached, exit loop
+                                Ok(n) => stream.write_all(&buffer[..n]).expect("Failed to write to stream"),
+                                Err(e) => panic!("Failed to read from file: {}", e)
+                            }
                         }
                         stream.shutdown(Shutdown::Write).expect("could not shutdown");
                         return Ok(());

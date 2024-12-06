@@ -58,15 +58,6 @@ impl Read for BufferedReaderTypes {
 ///     returned an error while trying to read a line from the file.
 ///
 pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>) -> Result<(), u8> {
-
-    // let file = match File::open(file_name) {
-    //     Ok(file) => file,
-    //     Err(e) => {
-    //         writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
-    //         return Err(FAILED_TO_GENERATE_SCRIPT);
-    //     }
-    // };
-
     // https://doc.rust-lang.org/std/io/struct.BufReader.html
     // let mut reader = BufReader::new(file);
     let mut reader = match get_buffered_reader(file_name) {
@@ -80,12 +71,12 @@ pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>)
 
     // run code for if the buffered reader holds a File type
     match buf_reader_type {
-        BufferedReaderTypes::File(_file) => {
+        BufferedReaderTypes::File(_) | BufferedReaderTypes::Stream(_) => {
             let mut line = String::new();
             loop {
                 line.clear();
                 match reader.read_line(&mut line) {
-                    Ok(0) => return Ok(()), // indicates success
+                    Ok(0) => return Ok(()), // EOF reached
                     Ok(..) => file_lines.push(line.trim().to_string()),
                     Err(e) => {
                         writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
@@ -93,42 +84,14 @@ pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>)
                     }
                 }
             }
-        },
-        BufferedReaderTypes::Stream(ref mut stream) => {
-            let mut line = String::new();
-            // loop {
-                // line.clear();
-                // match reader.read_line(&mut line) {
-                //     Ok(0) => return Ok(()), // indicates success
-                //     Ok(..) => file_lines.push(line.trim().to_string()),
-                //     Err(e) => {
-                //         writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
-                //         return Err(FAILED_TO_GENERATE_SCRIPT);
-                //     }
-                // }
-                // }
-            loop { // TODO I changed this but not sure if this has an effect on our testing
-                let mut text: String = String::new();
-                let read_ret = stream.read_to_string(&mut text).expect("Reading to String Failed.");
-                if read_ret == 0 {
-                    return Ok(());
-                }
-                let lines_vec: Vec<&str> = text.split('\n').collect();
-                for line in lines_vec {
-                    file_lines.push(line.trim().to_string());
-                }
-            }
         }
     }
-
-    // should never reach here but just in case return an error
-    Err(FAILED_TO_GENERATE_SCRIPT)
 }
 
 
 pub fn get_buffered_reader(text: &String) -> Result<BufReader<BufferedReaderTypes>, u8> {
     // check whether the string that was passed in begins with 'net:'
-    let pattern = "net:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d{1,5}):([a-zA-Z0-9_.]+)";
+    let pattern = r"^net:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5}):(.+)$";
     let re = Regex::new(pattern).unwrap();
     if re.is_match(text) {
         let sub_strs: Vec<&str> = text.split(':').collect();
@@ -139,8 +102,12 @@ pub fn get_buffered_reader(text: &String) -> Result<BufReader<BufferedReaderType
         match TcpStream::connect(addr) {
             Ok(mut stream) => {
                 let file_bytes = file_name.as_bytes();
-                stream.write(file_bytes).expect("Failed to Write to the Stream.");
-                let _ = stream.shutdown(Shutdown::Write);
+                if stream.write(file_bytes).is_err() {
+                    return Err(TCP_CONNECTION_FAILED);
+                }
+                if stream.shutdown(Shutdown::Write).is_err() {
+                    return Err(TCP_CONNECTION_FAILED);
+                }
                 Ok(BufReader::new(BufferedReaderTypes::Stream(stream)))
             },
             Err(..) => {
@@ -154,14 +121,6 @@ pub fn get_buffered_reader(text: &String) -> Result<BufReader<BufferedReaderType
             Ok(file) => Ok(BufReader::new(BufferedReaderTypes::File(file))),
             Err(..) => Err(FILE_OPEN_FAILED)
         }
-
-        // let file = match File::open(file_name) {
-    //     Ok(file) => file,
-    //     Err(e) => {
-    //         writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
-    //         return Err(FAILED_TO_GENERATE_SCRIPT);
-    //     }
-    // };
     }
 }
 
