@@ -62,6 +62,24 @@ change the type from a &str to a String.
 
 ### Multi-Threaded Server
 
+I started by creating the server cargo folder and implementing the server
+struct and the specified methods.  I implemented all of these functions to
+return Results so that if there are errors, those can be returned as we did
+in other places.  In the run function, I had some places that were more up
+to interpretation for the given instructions.  I made sure to check if the
+file name contained a / or \ or $ to prevent moving directories or using
+environment variables, but I did not include '..' because this would have
+complicated things a lot more and isn't really necessary if slashes are 
+not available.  It did take some experimenting to get reading from a buffer
+to work properly, but I ended up figuring out a good solution.  Implementing
+the main.rs file for the server was pretty simple as it was all things we had
+done before and could be replicated.
+
+The client test did take a significant amount of debugging to get to work
+because it would run infinitely and never get anything back and was stuck
+reading from the stream.  The fix came from sending shutdown from the server
+to tell the read that there was nothing more on the stream. 
+
 ### From Local to Networked File IO
 I modified the file I/O to support both local and networked files access. 
 This is done by adding the `get_buffered_reader` function which handles both 
