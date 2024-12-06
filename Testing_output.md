@@ -211,7 +211,7 @@ Quitting...
 ## 17. Mixed local and remote file access
 **Config Content**
 ```
-Guildenstern DOESNOTEXIST_Guildenstern_hamlet_ii_2a.txt
+Guildenstern Guildenstern_hamlet_ii_2a.txt
 King net:127.0.0.1:80:King_hamlet_ii_2a.txt
 Queen Queen_hamlet_ii_2a.txt
 Rosencrantz net:127.0.0.1:80:Rosencrantz_hamlet_ii_2a.txt
