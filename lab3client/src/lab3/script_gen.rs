@@ -1,6 +1,10 @@
-use std::io::Write;
+use std::any::{type_name, Any};
+use std::io::{stdout, Read, Write};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::net::{Shutdown, TcpStream};
+use std::ptr::write;
+use regex::Regex;
 use crate::lab3::declarations::*;
 
 pub type CharacterTextFile = String;
@@ -13,6 +17,25 @@ pub static CHARACTER_CONFIG_LINE: usize = 1;
 pub static CHARACTER_NAME_CONFIG_LINE_INDEX: usize = 0;
 pub static CHARACTER_FILE_CONFIG_LINE_INDEX: usize = 1;
 pub static CONFIG_LINE_TOKENS: usize = 2;
+
+
+pub enum BufferedReaderTypes {
+    Stream(TcpStream),
+    File(File),
+}
+
+impl Read for BufferedReaderTypes {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            BufferedReaderTypes::File(file) => {
+                file.read(buf)
+            },
+            BufferedReaderTypes::Stream(stream) => {
+                stream.read(buf)
+            }
+        }
+    }
+}
 
 // documentation example taken from:
 // https://deterministic.space/machine-readable-inline-markdown-code-cocumentation.html#markdown-formatting-conventions
@@ -36,28 +59,109 @@ pub static CONFIG_LINE_TOKENS: usize = 2;
 ///
 pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>) -> Result<(), u8> {
 
-    let file = match File::open(file_name) {
-        Ok(file) => file,
-        Err(e) => {
-            writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
-            return Err(FAILED_TO_GENERATE_SCRIPT);
-        }
-    };
+    // let file = match File::open(file_name) {
+    //     Ok(file) => file,
+    //     Err(e) => {
+    //         writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
+    //         return Err(FAILED_TO_GENERATE_SCRIPT);
+    //     }
+    // };
 
     // https://doc.rust-lang.org/std/io/struct.BufReader.html
-    let mut reader = BufReader::new(file);
-    let mut line = String::new();
+    // let mut reader = BufReader::new(file);
+    let mut reader = match get_buffered_reader(file_name) {
+        Ok(reader) => reader,
+        Err(e) => {
+            writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
+             return Err(FAILED_TO_GENERATE_SCRIPT);
+        }
+    };
+    let buf_reader_type = reader.get_mut();
 
-    loop {
-        line.clear();
-        match reader.read_line(&mut line) {
-            Ok(0) => return Ok(()), // indicates success
-            Ok(..) => file_lines.push(line.trim().to_string()),
-            Err(e) => {
-                writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
-                return Err(FAILED_TO_GENERATE_SCRIPT);
+    // run code for if the buffered reader holds a File type
+    match buf_reader_type {
+        BufferedReaderTypes::File(_file) => {
+            let mut line = String::new();
+            loop {
+                line.clear();
+                match reader.read_line(&mut line) {
+                    Ok(0) => return Ok(()), // indicates success
+                    Ok(..) => file_lines.push(line.trim().to_string()),
+                    Err(e) => {
+                        writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
+                        return Err(FAILED_TO_GENERATE_SCRIPT);
+                    }
+                }
+            }
+        },
+        BufferedReaderTypes::Stream(ref mut stream) => {
+            let mut line = String::new();
+            // loop {
+                // line.clear();
+                // match reader.read_line(&mut line) {
+                //     Ok(0) => return Ok(()), // indicates success
+                //     Ok(..) => file_lines.push(line.trim().to_string()),
+                //     Err(e) => {
+                //         writeln!(std::io::stderr().lock(), "ERROR: Failed to read line '{}': {}", file_name, e).expect("Failed to write to stderr");
+                //         return Err(FAILED_TO_GENERATE_SCRIPT);
+                //     }
+                // }
+                // }
+            loop { // TODO I changed this but not sure if this has an effect on our testing
+                let mut text: String = String::new();
+                let read_ret = stream.read_to_string(&mut text).expect("Reading to String Failed.");
+                if read_ret == 0 {
+                    return Ok(());
+                }
+                let lines_vec: Vec<&str> = text.split('\n').collect();
+                for line in lines_vec {
+                    file_lines.push(line.trim().to_string());
+                }
             }
         }
+    }
+
+    // should never reach here but just in case return an error
+    Err(FAILED_TO_GENERATE_SCRIPT)
+}
+
+
+pub fn get_buffered_reader(text: &String) -> Result<BufReader<BufferedReaderTypes>, u8> {
+    // check whether the string that was passed in begins with 'net:'
+    let pattern = "net:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d{1,5}):([a-zA-Z0-9_.]+)";
+    let re = Regex::new(pattern).unwrap();
+    if re.is_match(text) {
+        let sub_strs: Vec<&str> = text.split(':').collect();
+        // let net: String = sub_strs[0].to_string();
+        let addr: String = format!("{}:{}", sub_strs[1], sub_strs[2]); // TODO get rid of these hardcodes
+        let file_name: String = sub_strs[3].to_string();
+
+        match TcpStream::connect(addr) {
+            Ok(mut stream) => {
+                let file_bytes = file_name.as_bytes();
+                stream.write(file_bytes).expect("Failed to Write to the Stream.");
+                let _ = stream.shutdown(Shutdown::Write);
+                Ok(BufReader::new(BufferedReaderTypes::Stream(stream)))
+            },
+            Err(..) => {
+                Err(TCP_CONNECTION_FAILED)
+            }
+        }
+    } else {
+        // consider text to be a file name
+        let file_res = File::open(text);
+        match file_res {
+            Ok(file) => Ok(BufReader::new(BufferedReaderTypes::File(file))),
+            Err(..) => Err(FILE_OPEN_FAILED)
+        }
+
+        // let file = match File::open(file_name) {
+    //     Ok(file) => file,
+    //     Err(e) => {
+    //         writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", file_name, e).expect("Failed to write to stderr");
+    //         return Err(FAILED_TO_GENERATE_SCRIPT);
+    //     }
+    // };
     }
 }
 
