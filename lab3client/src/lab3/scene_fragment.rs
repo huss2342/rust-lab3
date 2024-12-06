@@ -1,3 +1,9 @@
+/*
+This client file defines the SceneFragment struct, which represents a single scene in the play and manages
+its players and script. It includes methods for preparing the scene from a configuration file, managing
+player entrances and exits, and reciting the scene's lines while handling errors and duplicate lines.
+ */
+
 use std::io::Write;
 use crate::lab3::declarations::{CharName, FAILED_TO_GENERATE_SCRIPT, WHINGE_MODE};
 use crate::lab3::player::Player;
@@ -11,7 +17,7 @@ use std::thread;
 type PlayConfig = Vec<(CharName, CharacterTextFile)>;
 
 pub struct SceneFragment {
-    // made public if that's ok
+    // made public for access
     pub title: String,
     players: Vec<Arc<Mutex<Player>>>,
 }
@@ -166,15 +172,6 @@ impl SceneFragment {
                     return Err(FAILED_TO_GENERATE_SCRIPT);
                 }
             }
-            // match handle.join() {
-                // Ok(player) => {
-                //     // if successful completion of thread, push player
-                //     self.players.push(Arc::new(Mutex::new(player)));
-                // }
-                // Err(_) => {
-                //     panic!("Thread panicked while generating script for a player.");
-                // }
-            // }
         }
         // sort player by first line number after all threads have joined
         self.players.sort_by(SceneFragment::compare_two_players);
@@ -285,7 +282,6 @@ impl SceneFragment {
             }
             cur_line += 1;
         }
-
     }
 }
 

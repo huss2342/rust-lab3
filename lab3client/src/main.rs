@@ -1,3 +1,10 @@
+/*
+This main file for the lab3client folder serves as the entry point for the client program, orchestrating
+the execution of the script processing and play recitation. It handles command-line arguments, initializes
+the Play structure, prepares the script, and invokes the recitation while providing error handling and
+usage instructions.
+ */
+
 pub mod lab3;
 use std::io::Write;
 use std::env;

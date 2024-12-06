@@ -1,3 +1,10 @@
+/*
+This main file from the lab3client_test folder serves as a client-side test utility for connecting to
+the server. It establishes a TCP connection, sends a token to the server, processes server responses,
+and optionally sends a shutdown request using the "quit" token. It also provides error handling and a
+usage message for invalid command-line arguments.
+ */
+
 use std::env;
 use std::io::{stdout, Read, Write};
 use std::net::{Shutdown, TcpStream};

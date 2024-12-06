@@ -1,3 +1,9 @@
+/*
+This client file provides utilities for reading and processing text from files or network streams to
+support script generation. It includes functionality to handle different input sources, trim and store
+file lines, and facilitate buffered reading of character configurations or scripts.
+ */
+
 use std::io::{Read, Write};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -57,7 +63,6 @@ impl Read for BufferedReaderTypes {
 ///
 pub fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>) -> Result<(), u8> {
     // https://doc.rust-lang.org/std/io/struct.BufReader.html
-    // let mut reader = BufReader::new(file);
     let mut reader = match get_buffered_reader(file_name) {
         Ok(reader) => reader,
         Err(e) => {
@@ -93,7 +98,6 @@ pub fn get_buffered_reader(text: &String) -> Result<BufReader<BufferedReaderType
     let re = Regex::new(pattern).unwrap();
     if re.is_match(text) {
         let sub_strs: Vec<&str> = text.split(':').collect();
-        // let net: String = sub_strs[0].to_string();
         let addr: String = format!("{}:{}", sub_strs[1], sub_strs[2]); // TODO get rid of these hardcodes
         let file_name: String = sub_strs[3].to_string();
 

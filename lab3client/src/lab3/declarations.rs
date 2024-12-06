@@ -1,5 +1,8 @@
-use std::sync::atomic::AtomicBool;
+/* This client file contains shared types, constants, and global variables used throughout
+the lab3client files. It centralizes common definitions to ensure consistency and maintainability.
+*/
 
+use std::sync::atomic::AtomicBool;
 pub type LineNum = usize;
 pub type CharName = String;
 pub type Line = String;

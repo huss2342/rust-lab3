@@ -1,8 +1,12 @@
+/*
+This server file defines the ReturnWrapper struct, which standardizes return code handling for the
+server application. It implements the Termination trait to map return codes to ExitCode values and
+provides error reporting for non-zero return codes.
+ */
+
 use std::io::Write;
 use std::process::{Termination, ExitCode};
-// use crate::lab3::declarations::SUCCESS;
-
-static SUCCESS: u8 = 0;
+use crate::lab3::server_declarations::SUCCESS;
 
 pub struct ReturnWrapper {
     ret_code: u8,

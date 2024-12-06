@@ -1,3 +1,9 @@
+/* This client file defines the Play struct, which manages the organization and execution of scene
+fragments within a play. It includes methods for preparing scripts, processing configurations,
+and reciting scenes, leveraging multithreading and shared state to handle complex interactions
+between fragments.
+*/
+
 use std::io::Write;
 use crate::lab3::declarations::*;
 use crate::lab3::script_gen::{grab_trimmed_file_lines};

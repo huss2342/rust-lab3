@@ -1,3 +1,9 @@
+/*
+This server file defines the Server struct and its associated methods to manage TCP server operations.
+It includes functionality to open a listener on a specified address, accept client connections, process
+file requests, and handle file transmission while respecting cancellation flags and error conditions.
+ */
+
 use crate::lab3;
 use lab3::server_declarations::*;
 use std::sync::atomic::Ordering::SeqCst;

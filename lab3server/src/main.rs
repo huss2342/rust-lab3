@@ -1,5 +1,10 @@
-pub mod lab3;
+/*
+This main file for the lab3server folder serves as the entry point for the server program. It processes
+command-line arguments, initializes the Server structure, establishes a network connection, and runs the
+server while providing error handling and usage instructions.
+ */
 
+pub mod lab3;
 use std::env;
 use std::io::Write;
 use lab3::server_declarations::*;
