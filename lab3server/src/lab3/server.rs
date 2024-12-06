@@ -56,7 +56,7 @@ impl Server {
 
             let connection = self.listener.as_mut().unwrap().accept();
             if CANCEL_FLAG.load(SeqCst) {
-                return Err(TEMP_ERR_RETURN);
+                return Ok(());
             }
             match connection {
                 Ok((mut stream, _addr)) => {
@@ -71,7 +71,9 @@ impl Server {
                         }
                         // if file_name is quit, set cancel flag and return immediately
                         if file_name == "quit" {
+                            println!("Quitting...");
                             CANCEL_FLAG.store(true, SeqCst);
+                            stream.shutdown(Shutdown::Both).expect("Failed to shutdown connection.");
                             return Ok(());
                         }
 
