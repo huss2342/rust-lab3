@@ -6,7 +6,7 @@ usage message for invalid command-line arguments.
  */
 
 use std::env;
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write};
 use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
@@ -42,7 +42,6 @@ fn main() -> Result<(), u8> {
                     if read_ret == 0 {
                         break;
                     }
-                    writeln!(stdout(), "WRITING: ").expect("Failed to write to stdout."); // TODO Idk if we want this or not, examine later
                     println!("{}", &text);
                 }
                 Ok(())

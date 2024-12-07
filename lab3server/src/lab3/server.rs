@@ -42,7 +42,7 @@ impl Server {
                 Ok(())
             },
             Err(..) => {
-                Err(TEMP_ERR_RETURN)
+                Err(FAILED_TO_BIND)
             }
         }
     }
@@ -51,7 +51,7 @@ impl Server {
     pub fn run(&mut self) -> Result<(), u8> {
         loop {
             if CANCEL_FLAG.load(SeqCst) || !self.is_open() {
-                return Err(TEMP_ERR_RETURN);
+                return Err(CANNOT_RUN_SERVER);
             }
 
             let connection = self.listener.as_mut().unwrap().accept();
@@ -67,7 +67,7 @@ impl Server {
                         // if file contains illegal file_name characters, return an appropriate error
                         if file_name.contains(|c: char| { c == '/' || c == '\\' || c == '$' }) {
                             writeln!(std::io::stderr().lock(), "ERROR: Cannot open file in another directory.").expect("Failed to write to stderr");
-                            return Err(TEMP_ERR_RETURN);
+                            return Err(FAILED_TO_OPEN_FILE);
                         }
                         // if file_name is quit, set cancel flag and return immediately
                         if file_name == "quit" {
@@ -82,11 +82,11 @@ impl Server {
                             Err(e) => {
                                 stream.shutdown(Shutdown::Both).expect("Failed to shutdown connection.");
                                 writeln!(std::io::stderr().lock(), "ERROR: Failed to open file '{}': {}", &file_name, e).expect("Failed to write to stderr");
-                                return Err(TEMP_ERR_RETURN);
+                                return Err(FAILED_TO_OPEN_FILE);
                             }
                         };
                         println!("sending file: {}", &file_name);
-                        let mut buffer = [0; 240];  // TODO change 240 to a static non-temp value
+                        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
                         loop {
                             match file.read(&mut buffer) {
                                 Ok(0) => break,  // EOF reached, exit loop
@@ -99,7 +99,7 @@ impl Server {
                     });
                 },
                 Err(..) =>  {
-                    return Err(TEMP_ERR_RETURN); // failed to open connection
+                    return Err(FAILED_TO_OPEN_CONNECTION); // failed to open connection
                 }
             }
         }

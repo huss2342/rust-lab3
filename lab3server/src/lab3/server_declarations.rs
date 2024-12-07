@@ -17,4 +17,9 @@ pub static FAILED_TO_GENERATE_SCRIPT: u8 = 2;
 
 pub static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 
-pub static TEMP_ERR_RETURN: u8 = 1;
+pub static CANNOT_RUN_SERVER: u8 = 1;
+pub static FAILED_TO_OPEN_CONNECTION: u8 = 2;
+pub static FAILED_TO_OPEN_FILE: u8 = 3;
+pub static FAILED_TO_BIND: u8 = 4;
+
+pub const BUFFER_SIZE: usize = 240;
