@@ -513,7 +513,7 @@ To be commanded.
 King:
 Thanks, Rosencrantz and gentle Guildenstern.
 
-Queen:
+ Queen:
 Thanks, Guildenstern and gentle Rosencrantz:
 And I beseech you instantly to visit
 My too-much-changed son.--Go, some of you,
@@ -529,4 +529,13 @@ Ay, amen!
 [Exit Rosencrantz.]
 [Exit Queen.]
 [Exit King.]
+```
+
+## 19. Whinge mode with missing line number 26
+```
+... The rest of the play ...
+And end his being: that done, he lets me go:
+ERROR: Missing line 26
+He seem'd to find his way without his eyes;
+... The rest of the play ...
 ```
